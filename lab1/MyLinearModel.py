@@ -49,25 +49,30 @@ class MyLinearModel:
             self.w = self.w - self.lr * dw
             self.b = self.b - self.lr * db
 
-    def fit_sgd(self, x_train, y_train):
+    def fit_sgd(self, x_train, y_train, batch_size=1):
         samples, features = x_train.shape
+
+        print(np.isnan(x_train).any())
+        print(np.isnan(y_train).any())
+
         self.w = np.zeros(features)
         self.b = 0
 
         rng = np.random.default_rng(seed=42)
 
         for _ in range(self.iters):
-            indices = rng.choice(np.arange(x_train.shape[0]), size=1, replace=False)
-            X_batch = x_train[indices]
+            indices = rng.choice(np.arange(samples), size=batch_size, replace=False)
+
+            x_batch = x_train[indices]
             y_batch = y_train[indices]
 
-            preds = np.dot(X_batch, self.w) + self.b
+            preds = np.dot(x_batch, self.w) + self.b
 
-            dw = np.dot(X_batch.T, (preds - y_batch)) / 1
-            db = np.sum(preds - y_batch) / 1
+            dw = np.dot(x_batch.T, (preds - y_batch)) / batch_size
+            db = np.sum(preds - y_batch) / batch_size
 
-            self.w = self.w - self.lr * dw
-            self.b = self.b - self.lr * db
+            self.w -= self.lr * dw
+            self.b -= self.lr * db
 
     def fit_analytical(self, x_train, y_train):
         X_b = np.hstack([np.ones((x_train.shape[0], 1)), x_train])
@@ -146,3 +151,19 @@ class DataProcessor:
         for column in non_numeric_columns:
             df = DataProcessor.apply_one_hot_encoding(df, column)
         return df
+
+    @staticmethod
+    def add_missing_columns(df1, df2):
+        columns_df1 = df1.columns
+        missing_columns = [col for col in columns_df1 if col not in df2.columns]
+        missing_df = pd.DataFrame(0, index=df2.index, columns=missing_columns)
+        df2 = pd.concat([df2, missing_df], axis=1)
+        df2 = df2[columns_df1]
+
+        return df2
+
+    @staticmethod
+    def replace_nans_with_mean_in_all_columns(df):
+        df_filled = df.apply(lambda col: col.fillna(col.mean()), axis=0)
+        return df_filled
+
