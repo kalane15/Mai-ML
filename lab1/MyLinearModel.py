@@ -20,12 +20,14 @@ class MyLinearModel:
         loss /= len(y_true)
         return loss
 
-    def __init__(self, lr=0.01, iters=20000, b=0, way=ModelLearnWay.GD):
+    def __init__(self, lr=0.01, iters=20000, b=0, way=ModelLearnWay.GD, l1=0, l2=0):
         self.lr = lr
         self.iters = iters
         self.w = None
         self.b = b
         self.way = way
+        self.lambda1_reg = l1
+        self.lambda2_reg = l2
 
     def fit(self, x_train, y_train):
         if self.way is ModelLearnWay.GD:
@@ -39,13 +41,16 @@ class MyLinearModel:
         samples, features = x_train.shape
         self.w = np.zeros(features)
         self.b = 0
+
         print(np.isnan(x_train).any())
         print(np.isnan(y_train).any())
 
         for _ in range(self.iters):
             preds = np.dot(x_train, self.w) + self.b
-            dw = (1 / samples) * np.dot(x_train.T, (preds - y_train))
+
+            dw = (1 / samples) * np.dot(x_train.T, (preds - y_train)) + self.lambda1_reg * np.sign(self.w)
             db = (1 / samples) * np.sum(preds - y_train)
+
             self.w = self.w - self.lr * dw
             self.b = self.b - self.lr * db
 
