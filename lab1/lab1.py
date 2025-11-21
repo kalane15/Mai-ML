@@ -23,7 +23,7 @@ df_normalized['RiskScore'] = y
 
 x, y = DataProcessor.df_to_matrix_numeric(df_normalized, 'RiskScore')
 
-model = MyLinearModel(iters=200000, l1=0.5)
+model = MyLinearModel(iters=20000)
 model.fit(x, y)
 
 df_test = pd.read_csv("test.csv")
