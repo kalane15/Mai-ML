@@ -20,7 +20,7 @@ class MyLinearModel:
         loss /= len(y_true)
         return loss
 
-    def __init__(self, lr=0.01, iters=200, b=0, way=ModelLearnWay.GD):
+    def __init__(self, lr=0.01, iters=20000, b=0, way=ModelLearnWay.GD):
         self.lr = lr
         self.iters = iters
         self.w = None
@@ -39,13 +39,13 @@ class MyLinearModel:
         samples, features = x_train.shape
         self.w = np.zeros(features)
         self.b = 0
+        print(np.isnan(x_train).any())
+        print(np.isnan(y_train).any())
 
         for _ in range(self.iters):
             preds = np.dot(x_train, self.w) + self.b
-            print(_)
             dw = (1 / samples) * np.dot(x_train.T, (preds - y_train))
             db = (1 / samples) * np.sum(preds - y_train)
-
             self.w = self.w - self.lr * dw
             self.b = self.b - self.lr * db
 
@@ -153,9 +153,10 @@ class DataProcessor:
         return df
 
     @staticmethod
-    def add_missing_columns(df1, df2):
+    def reshape_to(df1, df2):
         columns_df1 = df1.columns
         missing_columns = [col for col in columns_df1 if col not in df2.columns]
+        print(missing_columns)
         missing_df = pd.DataFrame(0, index=df2.index, columns=missing_columns)
         df2 = pd.concat([df2, missing_df], axis=1)
         df2 = df2[columns_df1]
@@ -163,7 +164,29 @@ class DataProcessor:
         return df2
 
     @staticmethod
+    def target_encoding_inplace(df, target_column, data=None):
+        new_data = {}
+        for cat_column in df.select_dtypes(include=['category', 'object']):
+            if data is None:
+                encoding_map = df.groupby(cat_column)[target_column].mean()
+                new_data[cat_column] = encoding_map
+            else:
+                try:
+                    encoding_map = data[cat_column]
+                except KeyError:
+                    continue
+            df[cat_column] = df[cat_column].map(encoding_map)
+
+        return df, new_data
+
+    @staticmethod
     def replace_nans_with_mean_in_all_columns(df):
         df_filled = df.apply(lambda col: col.fillna(col.mean()), axis=0)
         return df_filled
 
+    @staticmethod
+    def normalize_z_score(df, mean, std):
+        std_values = std
+        df = df.loc[:, std_values != 0]
+        df = (df - mean) / std
+        return df

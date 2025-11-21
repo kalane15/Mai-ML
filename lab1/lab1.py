@@ -3,24 +3,41 @@ import pandas as pd
 import numpy as np
 
 df = pd.read_csv("train.csv")
+# df = df.select_dtypes(include=['number'])
 
-df = DataProcessor.apply_one_hot_encoding_all(df)
+df = df[df['RiskScore'] > 0]
+df = df[df['RiskScore'] < 100]
+df = df.drop("AnnualIncome", axis=1)
+df = df.drop("Age", axis=1)
+df = df.drop("TotalAssets", axis=1)
+df = df.drop("LoanAmount", axis=1)
+df = df.drop("InterestRate", axis=1)
+df = df.drop('ApplicationDate', axis=1)
+df, encode_data = DataProcessor.target_encoding_inplace(df, 'RiskScore')
+
 df = DataProcessor.replace_nans_with_mean_in_all_columns(df)
-df = df.astype(int)
+y = df['RiskScore']
+df_without_risk = df.drop(columns=['RiskScore'])
+df_normalized = DataProcessor.normalize_z_score(df_without_risk, df_without_risk.mean(), df_without_risk.std())
+df_normalized['RiskScore'] = y
 
-x, y = DataProcessor.df_to_matrix_numeric(df, 'RiskScore')
-model = MyLinearModel()
+x, y = DataProcessor.df_to_matrix_numeric(df_normalized, 'RiskScore')
 
+model = MyLinearModel(iters=200000)
 model.fit(x, y)
 
 df_test = pd.read_csv("test.csv")
+df_test = df_test.drop('ID', axis=1)
+df_test, _ = DataProcessor.target_encoding_inplace(df_test, 'RiskScore', encode_data)
+df_test = DataProcessor.reshape_to(df.loc[:, df.columns != 'RiskScore'], df_test)
 
-df_test = DataProcessor.apply_one_hot_encoding_all(df_test)
-
-df_test = DataProcessor.add_missing_columns(df.loc[:, df.columns != 'RiskScore'], df_test)
-x, _ = DataProcessor.df_to_matrix_numeric(df_test)
+df_test = DataProcessor.normalize_z_score(df_test, df_without_risk.mean(), df_without_risk.std())
 
 print(model.w)
-
-preds = model.predict(x)
-print(preds)
+x_test, _ = DataProcessor.df_to_matrix_numeric(df_test)
+preds = model.predict(x_test)
+df_preds = pd.DataFrame({
+    'ID': range(0, len(preds)),
+    'RiskScore': preds
+})
+df_preds.to_csv('res.csv', index=False)
