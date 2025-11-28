@@ -1,3 +1,5 @@
+from sklearn.model_selection import KFold, cross_val_score
+
 from MyLinearModel import *
 import pandas as pd
 import numpy as np
@@ -5,8 +7,8 @@ import numpy as np
 df = pd.read_csv("train.csv")
 # df = df.select_dtypes(include=['number'])
 
-df = df[df['RiskScore'] > 0]
-df = df[df['RiskScore'] < 100]
+df = df[df['RiskScore'] > 20]
+df = df[df['RiskScore'] < 80]
 df = df.drop("AnnualIncome", axis=1)
 df = df.drop("Age", axis=1)
 df = df.drop("TotalAssets", axis=1)
@@ -25,6 +27,8 @@ x, y = DataProcessor.df_to_matrix_numeric(df_normalized, 'RiskScore')
 
 model = MyLinearModel(iters=20000)
 model.fit(x, y)
+print(MyCrossValidation.k_fold_cross_validation(model, x, y, 5))
+
 
 df_test = pd.read_csv("test.csv")
 df_test = df_test.drop('ID', axis=1)
@@ -40,4 +44,10 @@ df_preds = pd.DataFrame({
     'ID': range(0, len(preds)),
     'RiskScore': preds
 })
+
+
+mean_mse = mse_scores.mean()
+std_mse = mse_scores.std()
+print(f"Cross-validated MSE: {mean_mse:.4f} ± {std_mse:.4f}")
+
 df_preds.to_csv('res.csv', index=False)

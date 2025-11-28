@@ -42,9 +42,6 @@ class MyLinearModel:
         self.w = np.zeros(features)
         self.b = 0
 
-        print(np.isnan(x_train).any())
-        print(np.isnan(y_train).any())
-
         for _ in range(self.iters):
             preds = np.dot(x_train, self.w) + self.b
 
@@ -56,9 +53,6 @@ class MyLinearModel:
 
     def fit_sgd(self, x_train, y_train, batch_size=1):
         samples, features = x_train.shape
-
-        print(np.isnan(x_train).any())
-        print(np.isnan(y_train).any())
 
         self.w = np.zeros(features)
         self.b = 0
@@ -194,4 +188,11 @@ class DataProcessor:
         std_values = std
         df = df.loc[:, std_values != 0]
         df = (df - mean) / std
+        return df
+
+    @staticmethod
+    def remove_columns_with_less_corr(df, target, corr=0.01):
+        corr_with_target = df.corr()[target].abs()
+        columns_to_keep = corr_with_target[corr_with_target >= corr].index
+        df = df[columns_to_keep]
         return df
