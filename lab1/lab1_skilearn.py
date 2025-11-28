@@ -54,7 +54,6 @@ numeric_pipeline = Pipeline(
 categorical_pipeline = Pipeline(
     steps=[
         ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("binning", KBinsDiscretizer(n_bins=5, encode="onehot", strategy="quantile")),
         ("encoder", OneHotEncoder(handle_unknown="ignore")),
     ]
 )
