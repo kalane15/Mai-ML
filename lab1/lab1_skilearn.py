@@ -5,7 +5,7 @@ import inspect
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.feature_selection import SelectPercentile, f_regression
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
 from sklearn.model_selection import KFold, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, PolynomialFeatures, StandardScaler, \
@@ -47,7 +47,6 @@ numeric_pipeline = Pipeline(
         ("signed_log", FunctionTransformer(signed_log1p, validate=False)),
         ("scaler", StandardScaler()),
         ("poly", PolynomialFeatures(degree=3, include_bias=False)),
-        ("poly_scaler", StandardScaler()),
     ]
 )
 
@@ -69,7 +68,7 @@ pipeline = Pipeline(
     steps=[
         ("preprocessor", preprocessor),
         ("feature_select", SelectPercentile(score_func=f_regression, percentile=FEATURE_SELECTION_PERCENTILE)),
-        ("regressor", LinearRegression()),
+        ("regressor", Ridge(alpha=1.1)),
     ]
 )
 
@@ -77,17 +76,17 @@ pipeline.fit(X, y)
 preds = pipeline.predict(X_test)
 print(preds)
 
-df_preds = pd.DataFrame({
-    'ID': range(0, len(preds)),
-    'RiskScore': preds
-})
-
 cv = KFold(n_splits=5, shuffle=True, random_state=1488)
 mse_scores = -cross_val_score(
     pipeline, X, y, scoring="neg_mean_squared_error", cv=cv, n_jobs=-1
 )
-
 mean_mse = mse_scores.mean()
 std_mse = mse_scores.std()
-print(f"Cross-validated MSE: {mean_mse:.4f} ± {std_mse:.4f}")
+print(f"Cross-validated MSE: {mean_mse:.4f} ± {std_mse:.4f} = {mean_mse - std_mse}")
+
+
+df_preds = pd.DataFrame({
+    'ID': range(0, len(preds)),
+    'RiskScore': preds
+})
 df_preds.to_csv("res.csv", index=False)
