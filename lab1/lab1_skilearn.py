@@ -1,7 +1,7 @@
 from __future__ import annotations
-
 import inspect
 
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.feature_selection import SelectPercentile, f_regression
 from sklearn.impute import SimpleImputer
@@ -15,17 +15,51 @@ from MyLinearModel import *
 import pandas as pd
 import numpy as np
 
+import pandas as pd
+import numpy as np
+from sklearn.base import BaseEstimator, TransformerMixin
+
+import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
+
+
+class DropWeakFeaturesWithTargetCorrelation(BaseEstimator, TransformerMixin):
+    def __init__(self, correlation_threshold=0.1):
+        self.correlation_threshold = correlation_threshold
+        self.to_drop = None
+
+    def transform(self, df, target_column="RiskScore"):
+        if self.to_drop is not None:
+            return df.drop(columns=self.to_drop)
+
+        numeric = df.select_dtypes(include=['number'])
+        correlation_matrix = numeric.corrwith(df[target_column]).abs()
+        self.to_drop = correlation_matrix[correlation_matrix < self.correlation_threshold].index.tolist()
+
+        return df.drop(columns=self.to_drop)
+
+
+weak = DropWeakFeaturesWithTargetCorrelation(0.001)
+
 
 def modify_features(df):
     numerical_columns = df.select_dtypes(include=['number'])
     df[numerical_columns.columns] = numerical_columns.fillna(numerical_columns.median())
     df = df.drop("AnnualIncome", axis=1)
     df = df.drop("Age", axis=1)
+
     df = df.drop("MonthlyLoanPayment", axis=1)
     df['MonthlyIncomeToLoanAmountRatio'] = df['MonthlyIncome'] / df['LoanAmount']
     df['LoanToValueRatio'] = df['LoanAmount'] / df['TotalAssets']
     df['NetWorthToLoanAmountRatio'] = df['NetWorth'] / df['LoanAmount']
+    # df["LiabilityGap"] = df["TotalLiabilities"] - df["TotalAssets"]
+
+
+    # df = weak.transform(df)
     # df['Bankrot'] = df['BankruptcyHistory'] * df['PreviousLoanDefaults']
+    # df['Money'] = df['SavingsAccountBalance'] + df['CheckingAccountBalance']
+    # df = df.drop("SavingsAccountBalance", axis=1)
+    # df = df.drop("CheckingAccountBalance", axis=1)
     return df
 
 
@@ -85,7 +119,7 @@ pipeline = Pipeline(
     steps=[
         ("preprocessor", preprocessor),
         ("feature_select", SelectPercentile(score_func=f_regression, percentile=FEATURE_SELECTION_PERCENTILE)),
-        ("regressor", Ridge(alpha=1.9)),
+        ("regressor", Ridge(alpha=5.0)),
     ]
 )
 
