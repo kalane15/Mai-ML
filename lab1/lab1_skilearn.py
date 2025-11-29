@@ -22,8 +22,6 @@ def modify_features(df):
     df['MonthlyIncomeToLoanAmountRatio'] = df['MonthlyIncome'] / df['LoanAmount']
     df['LoanToValueRatio'] = df['LoanAmount'] / df['TotalAssets']
     df['NetWorthToLoanAmountRatio'] = df['NetWorth'] / df['LoanAmount']
-    df['BankruptcyHistory'] = df['BankruptcyHistory'] * df['BankruptcyHistory']
-    df['LengthOfCreditHistory'] = df['LengthOfCreditHistory'] * df['LengthOfCreditHistory']
     return df
 
 
