@@ -1,21 +1,17 @@
-from __future__ import annotations
-from sklearn.compose import ColumnTransformer, make_column_selector
-
 import numpy as np
 
 import pandas as pd
-from sklearn.linear_model import Ridge, LinearRegression
-from sklearn.model_selection import KFold, cross_val_score
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import cross_val_score, KFold
 
-from customRealization import *
 from customRealization.CustomSimpleImputer import CustomSimpleImputer
 from customRealization.CustomFunctionTransformer import CustomFunctionTransformer
 from customRealization.CustomRobustScaler import CustomRobustScaler
 from customRealization.CustomPolynomialFeatures import CustomPolynomialFeatures
 from customRealization.CustomOneHotEncoder import CustomOneHotEncoder
-from customRealization.CustomSelectPercentile import CustomSelectPercentile
-from customRealization.CustomRidge import CustomRidge
 from customRealization.CustomLinearRegression import CustomLinearRegression
+from customRealization.CustomSelectPercentile import CustomSelectPercentile
+
 
 def make_bins(df, col_name, num_bins=8):
     percentiles = np.linspace(0, 100, num_bins + 1)
@@ -48,36 +44,42 @@ def signed_log1p(data: np.ndarray) -> np.ndarray:
     return np.sign(data) * (np.log1p(np.abs(data)))
 
 
-FEATURE_SELECTION_PERCENTILE = 25
+encoder = CustomOneHotEncoder()
+
+
+def pipeline(df):
+    numeric_features = df.select_dtypes(include=[np.number]).to_numpy()
+    categorical_features = df.select_dtypes(exclude=[np.number]).to_numpy()
+
+    numeric_features = CustomSimpleImputer(strategy='median').fit_transform(numeric_features)
+    numeric_features = CustomFunctionTransformer(signed_log1p).fit_transform(numeric_features)
+    numeric_features = CustomRobustScaler().fit_transform(numeric_features)
+    numeric_features = CustomPolynomialFeatures(degree=3).fit_transform(numeric_features)
+
+    categorical_features = CustomSimpleImputer(strategy="most_frequent").fit_transform(categorical_features)
+
+    if encoder.categories_ is None:
+        categorical_features = encoder.fit_transform(categorical_features)
+    else:
+        categorical_features = encoder.transform(categorical_features)
+    combined = np.hstack((numeric_features, categorical_features))
+
+    return combined
+
+
 df = pd.read_csv("train.csv")
 
 df = df[df['RiskScore'] > 0]
 df = df[df['RiskScore'] < 100]
 
 df = modify_features(df)
-X = df.drop(columns='RiskScore')
-y = df['RiskScore']
+df_no_target = df.drop(columns='RiskScore')
 
-X_test = pd.read_csv("test.csv")
-X_test = modify_features(X_test)
-
-numeric_features = df.select_dtypes(include=[np.number]).drop(columns=["RiskScore"]).to_numpy()
-categorical_features = df.select_dtypes(exclude=[np.number]).to_numpy()
+X = pipeline(df_no_target)
 y = df['RiskScore'].to_numpy()
+X = CustomSelectPercentile().fit_transform(X, y)
 
-numeric_features = CustomSimpleImputer(strategy='median').fit_transform(numeric_features)
-numeric_features = CustomFunctionTransformer(signed_log1p).fit_transform(numeric_features)
-numeric_features = CustomRobustScaler().fit_transform(numeric_features)
-numeric_features = CustomPolynomialFeatures(degree=3).fit_transform(numeric_features)
-
-categorical_features = CustomSimpleImputer(strategy="most_frequent").fit_transform(categorical_features)
-categorical_features = CustomOneHotEncoder().fit_transform(categorical_features)
-
-combined = np.hstack((numeric_features, categorical_features))
-
-X = CustomSelectPercentile().fit_transform(combined, y)
-
-cv = KFold(n_splits=5, shuffle=True, random_state=1488)
+cv = KFold(n_splits=15, shuffle=True, random_state=188)
 mse_scores = -cross_val_score(
     CustomLinearRegression(), X, y, scoring="neg_mean_squared_error", cv=cv, n_jobs=-1
 )
