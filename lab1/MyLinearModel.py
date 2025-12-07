@@ -10,15 +10,6 @@ class ModelLearnWay(Enum):
 
 
 class MyLinearModel:
-    @staticmethod
-    def mse(y_true, y_pred):
-        loss = 0
-        for i in range(len(y_true)):
-            y = y_true[i]
-            pred = y_pred[i]
-            loss += (y - pred) ** 2
-        loss /= len(y_true)
-        return loss
 
     def __init__(self, lr=0.01, iters=20000, b=0, way=ModelLearnWay.GD, l1=0, l2=0):
         self.lr = lr
@@ -81,6 +72,16 @@ class MyLinearModel:
         preds = np.dot(x_test, self.w) + self.b
         return preds
 
+    @staticmethod
+    def mse(y_true, y_pred):
+        loss = 0
+        for i in range(len(y_true)):
+            y = y_true[i]
+            pred = y_pred[i]
+            loss += (y - pred) ** 2
+        loss /= len(y_true)
+        return loss
+
 
 class MyCrossValidation:
     @staticmethod
@@ -109,12 +110,13 @@ class MyCrossValidation:
         avg_mse = np.mean(mse_scores)
         return avg_mse
 
-
-class DataProcessor:
     @staticmethod
     def leave_one_out_cross_validation(model, x, y):
         return MyCrossValidation.k_fold_cross_validation(model, x, y, len(x))
 
+
+class DataProcessor:
+    @staticmethod
     @staticmethod
     def df_to_matrix_numeric(df, target_column=None):
         """
