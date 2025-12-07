@@ -3,6 +3,7 @@ import numpy as np
 
 class CustomLinearRegression:
     def __init__(self):
+        # Plain OLS solved via closed-form
         self.w = None
         self.b = None
 
@@ -11,6 +12,8 @@ class CustomLinearRegression:
         X = np.array(X)
         y = np.array(y)
         X_b = np.c_[np.ones((samples, 1)), X]
+
+        # Closed-form OLS solution
         res = np.linalg.pinv(X_b.T.dot(X_b)).dot(X_b.T).dot(y)
         self.b = res[0]
         self.w = res[1:]

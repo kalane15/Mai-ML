@@ -13,15 +13,21 @@ class CustomPolynomialFeatures:
         from itertools import combinations_with_replacement
 
         n_samples, n_features = X.shape
-        output = [X]
+        output = [np.ones((n_samples, 1))] if self.include_bias else []
+        output.append(X)
         for degree in range(2, self.degree + 1):
             for combo in combinations_with_replacement(range(n_features), degree):
                 output.append(np.prod(X[:, combo], axis=1).reshape(-1, 1))
-        result = np.hstack(output)
-        if not self.include_bias:
-            result = result[:, 1:]
-        return result
+        return np.hstack(output)
 
-    def fit_transform(self, X):
+    def fit_transform(self, X, y=None):
         self.fit(X)
         return self.transform(X)
+
+    def get_params(self, deep=True):
+        return {"degree": self.degree, "include_bias": self.include_bias}
+
+    def set_params(self, **params):
+        for k, v in params.items():
+            setattr(self, k, v)
+        return self

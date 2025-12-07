@@ -1,19 +1,24 @@
 import numpy as np
-from scipy.stats import pearsonr
+from scipy.stats import f
 
 
 def f_regression(X, y):
-    n_features = X.shape[1]
-    scores = np.zeros(n_features)
-    p_values = np.zeros(n_features)
+    X = np.asarray(X, dtype=float)
+    y = np.asarray(y, dtype=float)
+    y = y - y.mean()
+    X = X - X.mean(axis=0)
 
-    for i in range(n_features):
-        correlation, p_value = pearsonr(X[:, i], y)
+    denom = np.sqrt((X ** 2).sum(axis=0) * (y ** 2).sum())
+    denom[denom == 0] = np.inf
+    corr = (X * y[:, None]).sum(axis=0) / denom
+    corr = np.clip(corr, -1, 1)
 
-        scores[i] = correlation ** 2 / (1 - correlation ** 2)
-        p_values[i] = p_value
+    n = y.size
+    F = (corr ** 2 / (1 - corr ** 2)) * (n - 2)
+    F[np.isinf(F)] = np.finfo(float).max
 
-    return scores, p_values
+    p_values = f.sf(F, 1, n - 2)
+    return F, p_values
 
 
 class CustomSelectPercentile:
@@ -34,3 +39,11 @@ class CustomSelectPercentile:
     def fit_transform(self, X, y):
         self.fit(X, y)
         return self.transform(X)
+
+    def get_params(self, deep=True):
+        return {"score_func": self.score_func, "percentile": self.percentile}
+
+    def set_params(self, **params):
+        for k, v in params.items():
+            setattr(self, k, v)
+        return self

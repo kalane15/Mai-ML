@@ -11,7 +11,6 @@ class CustomSGDLinearRegression:
         self.batch_size = batch_size
 
     def fit(self, X, y):
-        print("called")
         samples, features = X.shape
         X = np.array(X)
         y = np.array(y)
