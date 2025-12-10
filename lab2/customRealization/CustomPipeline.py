@@ -1,12 +1,12 @@
 import numpy as np
 
-from CustomSimpleImputer import CustomSimpleImputer
-from CustomFunctionTransformer import CustomFunctionTransformer
-from CustomRobustScaler import CustomRobustScaler
-from CustomPolynomialFeatures import CustomPolynomialFeatures
-from CustomOneHotEncoder import CustomOneHotEncoder
-from CustomRidgeAnalytical import CustomRidgeAnalytical
-from CustomSelectPercentile import CustomSelectPercentile
+from customRealization.CustomSimpleImputer import CustomSimpleImputer
+from customRealization.CustomFunctionTransformer import CustomFunctionTransformer
+from customRealization.CustomRobustScaler import CustomRobustScaler
+from customRealization.CustomPolynomialFeatures import CustomPolynomialFeatures
+from customRealization.CustomOneHotEncoder import CustomOneHotEncoder
+from customRealization.CustomRidgeAnalytical import CustomRidgeAnalytical
+from customRealization.CustomSelectPercentile import CustomSelectPercentile
 
 
 def signed_log1p(data: np.ndarray) -> np.ndarray:
