@@ -27,6 +27,7 @@ class CustomPipelineModel:
         self.regressor = None
         self.is_fitted_ = False
         self.regressor = regressor
+        self.inited = False
 
     def _init_components(self):
         self.numeric_imputer = CustomSimpleImputer(strategy="median")
@@ -38,9 +39,11 @@ class CustomPipelineModel:
         self.feature_selector = CustomSelectPercentile(percentile=self.percentile)
         if self.regressor is None:
             self.regressor = CustomRidgeAnalytical(alpha=self.alpha)
+        self.inited = True
 
     def pipeline(self, df, fit: bool = False):
-        self._init_components()
+        if not self.inited:
+            self._init_components()
         numeric_features = df.select_dtypes(include=[np.number]).to_numpy()
         categorical_features = df.select_dtypes(exclude=[np.number]).to_numpy()
 

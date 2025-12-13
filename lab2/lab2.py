@@ -1,10 +1,7 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import TargetEncoder
-from sklearn.tree import DecisionTreeRegressor
 from customRealization.CustomPipeline import CustomPipelineModel
-from customRealization.CustomGradientBoosting import CustomGradientBoosting
-import xgboost as xgb
+import lightgbm as lgb
 
 from customRealization.CustomSelectPercentile import CustomSelectPercentile
 
@@ -28,6 +25,7 @@ def signed_log1p(data: np.ndarray) -> np.ndarray:
 
 pipe = CustomPipelineModel()
 selector = CustomSelectPercentile(percentile=25)
+
 
 def get_train_data():
     df_train = pd.read_csv("train_c.csv")
@@ -56,23 +54,18 @@ def get_test_data():
 X, y = get_train_data()
 params = {
     'max_depth': 7,
-    'learning_rate': 0.04704349102536999,
-    'n_estimators': 60,
-    'subsample': 0.7424524949663656,
-    'lambda': 3.6842389549204895,
-    'alpha': 5.677397570482204
+    'learning_rate': 0.07581910324041137,
+    'n_estimators': 50,
+    'subsample': 0.9126331830833376,
+    'alpha': 5.753379354378411
 }
 X_test = get_test_data()
-# model = CustomGradientBoosting(base_model=DecisionTreeRegressor(max_depth=params['max_depth']),
-#                                n_estimators=params['n_estimators'],
-#                                subsample=params['subsample'],
-#                                learning_rate=params['learning_rate'])
-model = xgb.XGBClassifier(**params)
+model = lgb.LGBMClassifier(**params)
+
 model.fit(X, y)
 
-
-test_predictions = model.predict(X_test )
-print("Test prediction stats:", test_predictions)
+test_predictions = model.predict(X_test)
+print("Test predictions:", test_predictions)
 
 df_preds = pd.DataFrame({
     'ID': range(0, len(test_predictions)),
