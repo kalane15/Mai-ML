@@ -78,11 +78,13 @@ def objective(trial):
             'random_state': 148,
             'verbose': -1
         }
+        feature_names = [f"feature_{i + 1}" for i in range(X.shape[1])]
+        X_train_df = pd.DataFrame(X_train, columns=feature_names)
+        X_test_df = pd.DataFrame(X_test, columns=feature_names)
 
         model = lgb.LGBMClassifier(**params)
-        model.fit(X_train, y_train)
-
-        y_pred_proba = model.predict_proba(X_test)[:, 1]
+        model.fit(X_train_df, y_train)
+        y_pred_proba = model.predict_proba(X_test_df)[:, 1]
         m = roc_auc_score(y_test, y_pred_proba)
         return m
     except Exception as e:
